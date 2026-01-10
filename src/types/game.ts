@@ -23,6 +23,8 @@ export interface GameState {
   board: Puyo[][];
   currentPuyo: FallingPuyo | null;
   nextPuyo: FallingPuyo;
+  // Puyo queue to ensure NEXT display always matches what falls next
+  puyoQueue: [FallingPuyo, FallingPuyo];
   score: number;
   chainCount: number;
   isGameOver: boolean;

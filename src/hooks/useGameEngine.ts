@@ -48,13 +48,14 @@ const getSubPosition = (main: Position, rotation: 0 | 1 | 2 | 3): Position => {
 
 export function useGameEngine() {
   const [gameState, setGameState] = useState<GameState>(() => {
-    // Generate initial puyos once and store them
+    // Generate initial puyos and store in queue
     const firstPuyo = createNewPuyo();
     const secondPuyo = createNewPuyo();
     return {
       board: createEmptyBoard(),
-      currentPuyo: firstPuyo,
-      nextPuyo: secondPuyo,
+      currentPuyo: null, // Will be set when game starts
+      nextPuyo: secondPuyo, // For display - will be synced with queue
+      puyoQueue: [firstPuyo, secondPuyo] as [FallingPuyo, FallingPuyo],
       score: 0,
       chainCount: 0,
       isGameOver: false,
@@ -235,19 +236,30 @@ export function useGameEngine() {
       const isGameOver = clearedBoard[1][2].color !== null || clearedBoard[0][2].color !== null;
 
       // Generate new puyo BEFORE setState to ensure consistency
-      const newNextPuyo = createNewPuyo();
+      const newPuyo = createNewPuyo();
 
-      setGameState(prev => ({
-        ...prev,
-        board: clearedBoard,
-        currentPuyo: isGameOver ? null : prev.nextPuyo,
-        nextPuyo: newNextPuyo,
-        score: prev.score + scoreGain,
-        chainCount: 0,
-        isGameOver,
-        clearedPuyos: prev.clearedPuyos + totalCleared,
-        level: Math.floor((prev.clearedPuyos + totalCleared) / 30) + 1,
-      }));
+      setGameState(prev => {
+        // Get next puyo from queue (index 1) - this is what was shown in NEXT
+        const nextFromQueue = prev.puyoQueue[1];
+        // Create new queue: [nextFromQueue, newPuyo]
+        const newQueue: [FallingPuyo, FallingPuyo] = [
+          { ...nextFromQueue, position: { row: 2, col: 2 }, rotation: 0 },
+          newPuyo,
+        ];
+
+        return {
+          ...prev,
+          board: clearedBoard,
+          currentPuyo: isGameOver ? null : newQueue[0],
+          nextPuyo: newQueue[1], // Always sync nextPuyo with queue[1]
+          puyoQueue: newQueue,
+          score: prev.score + scoreGain,
+          chainCount: 0,
+          isGameOver,
+          clearedPuyos: prev.clearedPuyos + totalCleared,
+          level: Math.floor((prev.clearedPuyos + totalCleared) / 30) + 1,
+        };
+      });
       clearingRef.current = false;
     },
     [checkAndClearChains]
@@ -349,10 +361,12 @@ export function useGameEngine() {
   const resetGame = useCallback(() => {
     const firstPuyo = createNewPuyo();
     const secondPuyo = createNewPuyo();
+    const queue: [FallingPuyo, FallingPuyo] = [firstPuyo, secondPuyo];
     setGameState({
       board: createEmptyBoard(),
-      currentPuyo: firstPuyo,
-      nextPuyo: secondPuyo,
+      currentPuyo: null,
+      nextPuyo: secondPuyo, // Sync with queue[1]
+      puyoQueue: queue,
       score: 0,
       chainCount: 0,
       isGameOver: false,
@@ -368,11 +382,13 @@ export function useGameEngine() {
     // Generate fresh puyos when starting to ensure consistency
     const firstPuyo = createNewPuyo();
     const secondPuyo = createNewPuyo();
+    const queue: [FallingPuyo, FallingPuyo] = [firstPuyo, secondPuyo];
     setGameState(prev => ({
       ...prev,
       isStarted: true,
-      currentPuyo: firstPuyo,
-      nextPuyo: secondPuyo,
+      currentPuyo: queue[0], // Current is queue[0]
+      nextPuyo: queue[1],    // NEXT shows queue[1]
+      puyoQueue: queue,
     }));
   }, []);
 
