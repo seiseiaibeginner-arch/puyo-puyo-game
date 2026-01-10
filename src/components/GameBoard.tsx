@@ -28,7 +28,7 @@ function FallingPuyoDisplay({ puyo }: { puyo: FallingPuyo }) {
     <>
       {puyo.position.row >= 0 && (
         <div
-          className="absolute transition-all duration-50"
+          className="absolute"
           style={{
             left: puyo.position.col * cellSize + 2,
             top: (puyo.position.row - 1) * cellSize + 2,
@@ -39,7 +39,7 @@ function FallingPuyoDisplay({ puyo }: { puyo: FallingPuyo }) {
       )}
       {subPos.row >= 0 && (
         <div
-          className="absolute transition-all duration-50"
+          className="absolute"
           style={{
             left: subPos.col * cellSize + 2,
             top: (subPos.row - 1) * cellSize + 2,
