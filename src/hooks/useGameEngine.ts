@@ -47,18 +47,23 @@ const getSubPosition = (main: Position, rotation: 0 | 1 | 2 | 3): Position => {
 };
 
 export function useGameEngine() {
-  const [gameState, setGameState] = useState<GameState>(() => ({
-    board: createEmptyBoard(),
-    currentPuyo: createNewPuyo(),
-    nextPuyo: createNewPuyo(),
-    score: 0,
-    chainCount: 0,
-    isGameOver: false,
-    isPaused: false,
-    isStarted: false,
-    level: 1,
-    clearedPuyos: 0,
-  }));
+  const [gameState, setGameState] = useState<GameState>(() => {
+    // Generate initial puyos once and store them
+    const firstPuyo = createNewPuyo();
+    const secondPuyo = createNewPuyo();
+    return {
+      board: createEmptyBoard(),
+      currentPuyo: firstPuyo,
+      nextPuyo: secondPuyo,
+      score: 0,
+      chainCount: 0,
+      isGameOver: false,
+      isPaused: false,
+      isStarted: false,
+      level: 1,
+      clearedPuyos: 0,
+    };
+  });
 
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
   const clearingRef = useRef(false);
@@ -229,11 +234,14 @@ export function useGameEngine() {
       // Check game over
       const isGameOver = clearedBoard[1][2].color !== null || clearedBoard[0][2].color !== null;
 
+      // Generate new puyo BEFORE setState to ensure consistency
+      const newNextPuyo = createNewPuyo();
+
       setGameState(prev => ({
         ...prev,
         board: clearedBoard,
         currentPuyo: isGameOver ? null : prev.nextPuyo,
-        nextPuyo: createNewPuyo(),
+        nextPuyo: newNextPuyo,
         score: prev.score + scoreGain,
         chainCount: 0,
         isGameOver,
@@ -339,10 +347,12 @@ export function useGameEngine() {
   }, []);
 
   const resetGame = useCallback(() => {
+    const firstPuyo = createNewPuyo();
+    const secondPuyo = createNewPuyo();
     setGameState({
       board: createEmptyBoard(),
-      currentPuyo: createNewPuyo(),
-      nextPuyo: createNewPuyo(),
+      currentPuyo: firstPuyo,
+      nextPuyo: secondPuyo,
       score: 0,
       chainCount: 0,
       isGameOver: false,
@@ -355,7 +365,15 @@ export function useGameEngine() {
   }, []);
 
   const startGame = useCallback(() => {
-    setGameState(prev => ({ ...prev, isStarted: true }));
+    // Generate fresh puyos when starting to ensure consistency
+    const firstPuyo = createNewPuyo();
+    const secondPuyo = createNewPuyo();
+    setGameState(prev => ({
+      ...prev,
+      isStarted: true,
+      currentPuyo: firstPuyo,
+      nextPuyo: secondPuyo,
+    }));
   }, []);
 
   // Game loop
