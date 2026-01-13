@@ -379,16 +379,12 @@ export function useGameEngine() {
   }, []);
 
   const startGame = useCallback(() => {
-    // Generate fresh puyos when starting to ensure consistency
-    const firstPuyo = createNewPuyo();
-    const secondPuyo = createNewPuyo();
-    const queue: [FallingPuyo, FallingPuyo] = [firstPuyo, secondPuyo];
+    // Use existing queue to ensure NEXT display matches what falls
     setGameState(prev => ({
       ...prev,
       isStarted: true,
-      currentPuyo: queue[0], // Current is queue[0]
-      nextPuyo: queue[1],    // NEXT shows queue[1]
-      puyoQueue: queue,
+      currentPuyo: prev.puyoQueue[0], // Current is queue[0]
+      nextPuyo: prev.puyoQueue[1],    // NEXT shows queue[1]
     }));
   }, []);
 
